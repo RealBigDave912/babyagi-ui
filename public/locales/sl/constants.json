@@ -15,5 +15,12 @@
   "FIRST_TASK_PLACEHOLDER": "Razvijte seznam opravil.",
   "ALERT_GPT_4_DISABLED": "Vaš ključ API-ja nima pravic do dostopa do GPT-4. Izberite drug model in ga zaženite.",
   "USER_INPUT_PLACEHOLDER": "Vnesite svoj odgovor tukaj ...",
-  "ERROR_CREATING_TASKS": "Napaka pri ustvarjanju nalog"
+  "ERROR_CREATING_TASKS": "Napaka pri ustvarjanju nalog",
+  "EXAMPLE_OBJECTIVE_1": "Napišite vremensko poročilo za naslednje 3 dni v Parizu.",
+  "EXAMPLE_OBJECTIVE_2": "Raziskujte model gpt-3.5-turbo-0613",
+  "EXAMPLE_OBJECTIVE_3": "Poročajte o najnovejših novicah v uporabnikovi najljubši kategoriji.",
+  "EXAMPLES": "Primeri",
+  "EXAMPLE_OBJECTIVE_4": "Napišite poročilo o tem, kaj je BabyAGI. V poročilo vključite Youtube povezavo.",
+  "EXAMPLE_OBJECTIVE_5": "Na podlagi skillSaver.ts napišite nov skill imenovano airtableSaver.ts, ki uporablja Airtable API za vstavljanje podatkov v določeno tabelo.",
+  "EXAMPLE_OBJECTIVE_6": "Povzetek strani"
 }

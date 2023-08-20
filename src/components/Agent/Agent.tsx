@@ -20,8 +20,6 @@ import {
   loadingAgentMessage,
 } from '../../utils/message';
 import { BabyAGI } from '@/agents/babyagi';
-import { BabyBeeAGI } from '@/agents/babybeeagi/agent';
-import { BabyCatAGI } from '@/agents/babycatagi/agent';
 import { BabyDeerAGI } from '@/agents/babydeeragi/executer';
 import { AGENT, ITERATIONS, MODELS, SETTINGS_KEY } from '@/utils/constants';
 import { toast } from 'sonner';
@@ -29,12 +27,14 @@ import { v4 as uuidv4 } from 'uuid';
 import { useExecution } from '@/hooks/useExecution';
 import { useExecutionStatus } from '@/hooks/useExecutionStatus';
 import { translate } from '../../utils/translate';
-import { AgentMessageFooter } from './AgentMessageFooter';
 import axios from 'axios';
 import { taskCompletedNotification } from '@/utils/notification';
-import { MessageSummaryCard } from './MessageSummaryCard';
 import { useTranslation } from 'next-i18next';
 import { AgentMessageBlock } from './AgentMessageBlock';
+import { AgentTask } from './AgentTask';
+import { IntroGuide } from './IntroGuide';
+import { BabyElfAGI } from '@/agents/babyelfagi/executer';
+import { SkillsList } from './SkillList';
 
 export const Agent: FC = () => {
   const [model, setModel] = useState<SelectItem>(MODELS[1]);
@@ -48,9 +48,9 @@ export const Agent: FC = () => {
   const [agentStatus, setAgentStatus] = useState<AgentStatus>({
     type: 'ready',
   });
-  const [agent, setAgent] = useState<
-    BabyAGI | BabyBeeAGI | BabyCatAGI | BabyDeerAGI | null
-  >(null);
+  const [agent, setAgent] = useState<BabyAGI | BabyDeerAGI | BabyElfAGI | null>(
+    null,
+  );
   const [selectedAgent, setSelectedAgent] = useState<SelectItem>(AGENT[0]);
   const { i18n } = useTranslation();
   const [language, setLanguage] = useState(i18n.language);
@@ -138,14 +138,16 @@ export const Agent: FC = () => {
   // handler functions
   const messageHandler = (message: Message) => {
     setMessages((currentMessages) => {
-      // if the message.type and id are the same, overwrite the message
-      const index = currentMessages.findIndex(
-        (msg) => msg.type === message.type && msg.id === message.id,
-      );
-      if (index !== -1) {
-        const newMessages = [...currentMessages];
-        newMessages[index] = message;
-        return newMessages;
+      if (selectedAgent.id !== 'babyagi') {
+        // if the message.type and id are the same, overwrite the message
+        const index = currentMessages.findIndex(
+          (msg) => msg.type === message.type && msg.id === message.id,
+        );
+        if (index !== -1) {
+          const newMessages = [...currentMessages];
+          newMessages[index] = message;
+          return newMessages;
+        }
       }
 
       const updatedMessages = [...currentMessages, message];
@@ -169,9 +171,6 @@ export const Agent: FC = () => {
   const cancelHandle = () => {
     setAgent(null);
     setExecuting(false);
-    // refresh message blocks
-    const blocks = getMessageBlocks(messages, isExecuting);
-    setMessageBlocks(blocks);
   };
 
   const startHandler = async () => {
@@ -209,31 +208,19 @@ export const Agent: FC = () => {
           verbose,
         );
         break;
-      case 'babybeeagi':
-        agent = new BabyBeeAGI(
-          objective,
-          model.id,
-          firstTask,
-          messageHandler,
-          setAgentStatus,
-          cancelHandle,
-          language,
-          verbose,
-        );
-        break;
-      case 'babycatagi':
-        agent = new BabyCatAGI(
-          objective,
-          model.id,
-          messageHandler,
-          setAgentStatus,
-          cancelHandle,
-          language,
-          verbose,
-        );
-        break;
       case 'babydeeragi':
         agent = new BabyDeerAGI(
+          objective,
+          model.id,
+          messageHandler,
+          setAgentStatus,
+          cancelHandle,
+          language,
+          verbose,
+        );
+        break;
+      case 'babyelfagi':
+        agent = new BabyElfAGI(
           objective,
           model.id,
           messageHandler,
@@ -255,6 +242,10 @@ export const Agent: FC = () => {
   };
 
   const stopHandler = () => {
+    // refresh message blocks
+    const blocks = getMessageBlocks(messages, false);
+    setMessageBlocks(blocks);
+
     setExecuting(false);
     agent?.stop();
 
@@ -278,11 +269,18 @@ export const Agent: FC = () => {
 
   const downloadHandler = () => {
     const element = document.createElement('a');
-    const file = new Blob([getExportText(messages, selectedAgent.id)], {
-      type: 'text/plain;charset=utf-8',
-    });
+    const filename =
+      objective.length > 0
+        ? `${objective.replace(/\s/g, '_')}.txt`
+        : 'download.txt';
+    const file = new Blob(
+      ['\uFEFF' + getExportText(messages, selectedAgent.id)],
+      {
+        type: 'text/plain;charset=utf-8',
+      },
+    );
     element.href = URL.createObjectURL(file);
-    element.download = `${objective.replace(/\s/g, '_')}.txt`;
+    element.download = filename;
     document.body.appendChild(element);
     element.click();
 
@@ -351,9 +349,9 @@ export const Agent: FC = () => {
     }
   };
 
-  const userInputHandler = async (text: string) => {
+  const userInputHandler = async (id: number, text: string) => {
     if (agent instanceof BabyDeerAGI) {
-      agent.userInput(text);
+      agent.userInput(id, text);
     }
   };
 
@@ -397,8 +395,48 @@ export const Agent: FC = () => {
     return undefined;
   };
 
+  const currentAgentId = () => {
+    if (isExecuting) {
+      return selectedAgent.id;
+    }
+
+    const selectedExecution = executions.find(
+      (exe) => exe.id === selectedExecutionId,
+    );
+    if (selectedExecution) {
+      return selectedExecution.params.agent;
+    }
+    return undefined;
+  };
+
+  const skills = () => {
+    if (selectedAgent.id === 'babyelfagi') {
+      const elf = new BabyElfAGI(
+        objective,
+        model.id,
+        messageHandler,
+        setAgentStatus,
+        cancelHandle,
+        language,
+        false,
+      );
+      const skills = elf.skillRegistry.getAllSkills();
+      const skillInfos = skills.map((skill) => {
+        const skillInfo = {
+          name: skill.name,
+          description: skill.descriptionForHuman,
+          icon: skill.icon,
+          badge: skill.type,
+        };
+        return skillInfo;
+      });
+      return skillInfos;
+    }
+    return [];
+  };
+
   return (
-    <div className="overflow-none relative flex-1 bg-white dark:bg-[#343541]">
+    <div className="overflow-none relative flex-1 bg-white dark:bg-black">
       {messageBlocks.length === 0 ? (
         <>
           <AgentParameter
@@ -411,26 +449,46 @@ export const Agent: FC = () => {
             agent={selectedAgent}
             setAgent={setSelectedAgent}
           />
-          <div className="h-[calc(100vh-450px)]">
-            <ProjectTile />
+          {selectedAgent.id === 'babyelfagi' && (
+            <SkillsList skills={skills()} />
+          )}
+          <div className="h-[calc(100vh-600px)]">
+            <div className="flex h-full flex-col items-center justify-center gap-6 p-4">
+              <ProjectTile />
+              {(selectedAgent.id === 'babydeeragi' ||
+                selectedAgent.id === 'babyelfagi') && (
+                <IntroGuide
+                  onClick={(value) => setObjective(value)}
+                  agent={selectedAgent.id}
+                />
+              )}
+            </div>
           </div>
         </>
       ) : (
         <div className="max-h-full overflow-scroll">
           <AgentMessageHeader model={model} agent={selectedAgent} />
-          {messageBlocks.map((block, index) => (
-            <AgentMessageBlock
-              block={block}
-              key={index}
-              userInputCallback={userInputHandler}
-            />
-          ))}
+          {messageBlocks.map((block, index) =>
+            currentAgentId() === 'babydeeragi' ||
+            currentAgentId() === 'babyelfagi' ? (
+              <AgentTask
+                block={block}
+                key={index}
+                userInputCallback={userInputHandler}
+              />
+            ) : (
+              <AgentMessageBlock
+                block={block}
+                key={index}
+                userInputCallback={userInputHandler}
+              />
+            ),
+          )}
           {isExecuting && (
             <AgentMessage message={loadingAgentMessage(agentStatus)} />
           )}
-          {!isExecuting && messages.length > 0 && <AgentMessageFooter />}
           <div
-            className="h-[162px] bg-white dark:bg-[#343541]"
+            className="h-[162px] bg-white dark:bg-black"
             ref={messagesEndRef}
           />
         </div>

@@ -6,6 +6,7 @@ import axios from 'axios';
 import { parseTasks } from '@/utils/task';
 import { getUserApiKey } from '@/utils/settings';
 import { t } from 'i18next';
+import { translate } from '@/utils/translate';
 
 export interface AgentTask {
   id: number;
@@ -166,7 +167,9 @@ export class BabyBeeAGI {
   printAllTaskCompleted() {
     if (!this.isRunning) return;
 
-    this.messageCallback(setupMessage('complete', 'All Tasks Completed'));
+    this.messageCallback(
+      setupMessage('complete', translate('ALL_TASK_COMPLETED_TOAST', 'agent')),
+    );
     if (!this.verbose) return;
     console.log('%c*****ALL TASK COMPLETED*****%c', 'color:blue', '');
   }
@@ -344,7 +347,7 @@ export class BabyBeeAGI {
       const { result, ...rest } = task;
       return rest;
     });
-    const websearchVar = process.env.SEARP_API_KEY ? '[web-search] ' : ''; // if search api key is not set, don't add [web-search] to the task description
+    const websearchVar = process.env.SERP_API_KEY ? '[web-search] ' : ''; // if search api key is not set, don't add [web-search] to the task description
     const res = result.slice(0, 4000); // come up with a better solution lator
 
     let managedResult = '';

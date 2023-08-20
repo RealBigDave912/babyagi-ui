@@ -3,6 +3,7 @@ import { translate } from './translate';
 export const SETTINGS_KEY = 'BABYAGIUI_SETTINGS';
 export const EXECUTIONS_KEY = 'BABYAGIUI_EXECUTIONS';
 export const STATE_KEY = 'BABYAGIUI_STATE';
+export const EXAMPLES_KEY = 'BABYAGIUI_EXAMPLES';
 
 export const MODELS = [
   {
@@ -14,11 +15,6 @@ export const MODELS = [
   {
     id: 'gpt-3.5-turbo-0613',
     name: 'OpenAI gpt-3.5-turbo',
-    icon: 'openai-logo.svg',
-  },
-  {
-    id: 'text-davinci-003',
-    name: 'OpenAI text-davinci-003',
     icon: 'openai-logo.svg',
   },
 ];
@@ -43,19 +39,14 @@ export const AGENT = [
     name: 'BabyDeerAGI',
     icon: '🦌',
     message: '🤖/🔎+📄/🧑‍💻',
-    badge: 'NEW',
+    badge: 'STABLE',
   },
   {
-    id: 'babycatagi',
-    name: 'BabyCatAGI',
-    icon: '🐱',
-    message: '🤖/🔎+📄',
-  },
-  {
-    id: 'babybeeagi',
-    name: 'BabyBeeAGI',
-    icon: '🐝',
-    message: '🤖/🔎/📄',
+    id: 'babyelfagi',
+    name: 'BabyElfAGI',
+    icon: '🧝',
+    message: '(Currently using GPT-4 for task creation)',
+    badge: 'BETA',
   },
   { id: 'babyagi', name: 'BabyAGI', icon: '👶', message: '🤖' },
 ];

@@ -11,8 +11,8 @@ import { translate } from '@/utils/translate';
 
 export class BabyDeerAGI extends AgentExecuter {
   sessionSummary = `OBJECTIVE: ${this.objective}\n\n`;
-  userInputResolver: ((message: string) => void) | null = null;
-  userInputPromise: Promise<string> | null = null;
+  userInputResolvers: { [id: number]: (message: string) => void } = {};
+  userInputPromises: { [id: number]: Promise<string> } = {};
 
   // Create task list by agent
   async taskCreation() {
@@ -44,16 +44,16 @@ export class BabyDeerAGI extends AgentExecuter {
         let dependentTasksOutput = '';
         if (task.dependentTaskIds) {
           for (const id of task.dependentTaskIds) {
-            const dependentTasks = getTaskById(this.taskList, id);
-            const dependentTaskOutput = dependentTasks?.output?.slice(0, 14000);
-            dependentTasksOutput += dependentTaskOutput;
+            const dependentTask = getTaskById(this.taskList, id);
+            const dependentTaskOutput = dependentTask?.output;
+            dependentTasksOutput += `${dependentTask?.task}: ${dependentTaskOutput}\n`;
           }
         }
         const prompt = textCompletionToolPrompt(
           this.objective,
           this.language,
           task.task,
-          dependentTasksOutput,
+          dependentTasksOutput.slice(0, 14000),
         );
 
         taskOutput = await textCompletionTool(
@@ -65,11 +65,20 @@ export class BabyDeerAGI extends AgentExecuter {
         );
         break;
       case 'web-search':
+        let dependentOutput = '';
+        if (task.dependentTaskIds) {
+          for (const dependentTaskId of task.dependentTaskIds) {
+            const dependentTask = getTaskById(this.taskList, dependentTaskId);
+            if (!dependentTask) continue;
+            const dependentTaskOutput = dependentTask.output;
+            dependentOutput += `${dependentTask.task}: ${dependentTaskOutput}\n`;
+          }
+        }
         taskOutput =
           (await webBrowsing(
             this.objective,
             task,
-            this.taskList,
+            dependentOutput,
             this.messageCallback,
             this.statusCallback,
             this.isRunningRef,
@@ -97,7 +106,8 @@ export class BabyDeerAGI extends AgentExecuter {
     // Execute the task
     this.taskList[taskIndex].status = 'running';
     this.currentStatusCallback();
-    this.printer.printNextTask(task);
+    // this.printer.printNextTask(task);
+    this.printer.printTaskExecute(task);
 
     let taskOutput = await this.taskOutputWithTool(task);
 
@@ -118,6 +128,8 @@ export class BabyDeerAGI extends AgentExecuter {
   // Override AgentExecuter
   async prepare() {
     super.prepare();
+    this.userInputPromises = {};
+    this.userInputResolvers = {};
     // 1. Create task list
     await this.taskCreation();
   }
@@ -159,17 +171,17 @@ export class BabyDeerAGI extends AgentExecuter {
       this.statusCallback({ type: 'finished' });
       return;
     }
-    const id = this.taskList[this.taskList.length - 1].id + 1;
+    const id = this.taskList.length + 1;
     this.printer.printTaskList(this.taskList, id);
 
     super.finishup();
   }
 
-  async userInput(message: string): Promise<void> {
-    if (this.userInputResolver) {
-      this.userInputResolver(message);
-      this.userInputResolver = null;
-      this.userInputPromise = null;
+  async userInput(taskId: number, message: string): Promise<void> {
+    if (this.userInputResolvers[taskId]) {
+      this.userInputResolvers[taskId](message);
+      delete this.userInputResolvers[taskId];
+      delete this.userInputPromises[taskId];
     }
   }
 
@@ -179,10 +191,10 @@ export class BabyDeerAGI extends AgentExecuter {
     );
     toast.message(translate('USER_INPUT_WAITING', 'message'));
     this.statusCallback({ type: 'user-input' });
-    this.userInputPromise = new Promise((resolve) => {
-      this.userInputResolver = resolve;
+    this.userInputPromises[task.id] = new Promise((resolve) => {
+      this.userInputResolvers[task.id] = resolve;
     });
-    return this.userInputPromise;
+    return this.userInputPromises[task.id];
   }
 
   currentStatusCallback = () => {

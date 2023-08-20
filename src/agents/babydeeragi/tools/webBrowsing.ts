@@ -10,26 +10,19 @@ import { translate } from '@/utils/translate';
 export const webBrowsing = async (
   objective: string,
   task: AgentTask,
-  taskList: AgentTask[],
+  dependentTasksOutput: string,
   messageCallback: (message: Message) => void,
-  statusCallback: (status: AgentStatus) => void,
-  isRunningRef: React.MutableRefObject<boolean>,
-  verbose: boolean,
-  modelName: string,
-  language: string,
+  statusCallback?: (status: AgentStatus) => void,
+  isRunningRef?: React.MutableRefObject<boolean>,
+  verbose: boolean = false,
+  modelName: string = 'gpt-3.5-turbo',
+  language: string = 'en',
   signal?: AbortSignal,
 ) => {
-  let dependentTasksOutput = '';
-  if (task.dependentTaskIds) {
-    for (const dependentTaskId of task.dependentTaskIds) {
-      const dependentTask = getTaskById(taskList, dependentTaskId);
-      if (!dependentTask) continue;
-      const dependentTaskOutput = dependentTask.output?.slice(0, 2000);
-      dependentTasksOutput += ` ${dependentTaskOutput}`;
-    }
-  }
-
-  const prompt = searchQueryPrompt(task.task, dependentTasksOutput);
+  const prompt = searchQueryPrompt(
+    task.task,
+    dependentTasksOutput.slice(0, 3500),
+  );
   const searchQuery = await textCompletionTool(prompt, modelName, signal);
 
   const trimmedQuery = searchQuery.replace(/^"|"$/g, ''); // remove quotes from the search query
@@ -38,11 +31,14 @@ export const webBrowsing = async (
   let message = `Search query: ${trimmedQuery}\n`;
   callbackSearchStatus(title, message, task, messageCallback);
   const searchResults = await webSearchTool(trimmedQuery, signal);
+  if (!searchResults) {
+    return 'Failed to search.';
+  }
   let statusMessage = message;
 
-  if (!isRunningRef.current) return;
+  if (!isRunningRef?.current) return;
 
-  const sinmplifiedSearchResults = simplifySearchResults(searchResults);
+  const simplifiedSearchResults = simplifySearchResults(searchResults);
   title = `📖 Reading content...`;
   message = `✅ Completed search. \nNow reading content.\n`;
   if (verbose) {
@@ -57,9 +53,9 @@ export const webBrowsing = async (
   let results = '';
   let index = 1;
   let completedCount = 0;
-  const MaxCompletedCount = 2;
+  const MaxCompletedCount = 3;
   // Loop through search results
-  for (const searchResult of sinmplifiedSearchResults) {
+  for (const searchResult of simplifiedSearchResults) {
     if (!isRunningRef.current) return;
     if (completedCount >= MaxCompletedCount) break;
 
@@ -76,7 +72,7 @@ export const webBrowsing = async (
     const content = (await webScrapeTool(url, signal)) ?? '';
 
     title = `${index}. Extracting relevant info...`;
-    message = `  -  Content reading completed. Length:${content.length}. Now extracting relevant info...\n`;
+    message = `  - Content reading completed. Length:${content.length}. Now extracting relevant info...\n`;
     if (verbose) {
       console.log(message);
     }
@@ -112,7 +108,6 @@ export const webBrowsing = async (
       objective,
       content.slice(0, 20000),
       task,
-      modelName,
       isRunningRef,
       callback,
       signal,
@@ -155,7 +150,7 @@ export const webBrowsing = async (
   const msg: Message = {
     type: 'search-logs',
     text: '```markdown\n' + statusMessage + '\n```',
-    title: translate('SEARCH_LOGS', 'message'),
+    title: `🔎 ${translate('SEARCH_LOGS', 'message')}`,
     id: task.id,
     icon: '🌐',
     open: false,
@@ -172,7 +167,7 @@ const callbackSearchStatus = (
   messageCallback: (message: Message) => void,
 ) => {
   messageCallback({
-    type: 'task-execute',
+    type: 'search-logs',
     title: title ?? translate('SEARCH_LOGS', 'message'),
     text: '```markdown\n' + message + '\n```',
     id: task.id,

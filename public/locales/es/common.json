@@ -12,7 +12,7 @@
   "New": "Nuevo",
   "OPENAI_API_KEY": "Clave API de OpenAI",
   "REFER_TO_THE_ORIGINAL_PAPER": "Consulte el artículo original.",
-  "SAVE": "Ahorrar",
+  "SAVE": "Guardar",
   "SETTINGS": "Ajustes",
   "SET_OPENAI_API_KEY": "Establecer la clave API de OpenAI",
   "SUMMARY": "Resumen",
@@ -20,5 +20,6 @@
   "THEME": "Tema",
   "TITLE_INSTRUCTION_OPENAI_API_KEY": "👉 Debe configurar su clave API OpenAI en el menú de configuración.",
   "DARK_MODE": "Modo oscuro",
-  "LIGHT_MODE": "Modo claro"
+  "LIGHT_MODE": "Modo claro",
+  "AVAILABLE_SKILLS": "Habilidades disponibles"
 }

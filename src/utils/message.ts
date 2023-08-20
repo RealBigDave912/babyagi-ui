@@ -1,5 +1,6 @@
 import {
   AgentStatus,
+  AgentTask,
   Message,
   MessageBlock,
   MessageType,
@@ -61,8 +62,6 @@ export const setupMessage = (
       // ? '🧑‍💻'
       type === 'task-output'
       ? '✅'
-      : type === 'sufficiency-result'
-      ? '🤔'
       : type === 'failed'
       ? '❌'
       : type === 'user-input'
@@ -96,14 +95,12 @@ export const setupMessage = (
       ? translate('FINISHED', 'message')
       : type === 'failed'
       ? translate('TASK_FAILED', 'message')
-      : type === 'sufficiency-result'
-      ? translate('OUTPUT_SUFFICIENCY', 'message')
       : '';
 
   const bgColor =
     type === 'loading'
       ? 'bg-neutral-100 dark:bg-neutral-600/10'
-      : 'bg-neutral-50 dark:bg-[#444654]';
+      : 'bg-neutral-50 dark:bg-black';
 
   return {
     text: text ?? '',
@@ -112,6 +109,30 @@ export const setupMessage = (
     title: title,
     bgColor: bgColor,
     id: id,
+  };
+};
+
+export const setupMessageWithTask = (task: AgentTask): Message => {
+  const skillIcon = task.skill ? task.icon ?? '🛠️' : undefined;
+  const toolIcon =
+    task.tool === 'web-search'
+      ? '🔍'
+      : task.tool === 'web-scrape'
+      ? '📄'
+      : task.tool === 'text-completion'
+      ? '🤖'
+      : task.tool === 'user-input'
+      ? '🧑‍💻'
+      : '👉';
+
+  return {
+    text: `${task.id}. ${task.task}`,
+    type: 'next-task',
+    icon: skillIcon ?? toolIcon,
+    title: translate('NEXT_TASK', 'message'),
+    id: task.id,
+    dependentTaskIds: task.dependentTaskIds,
+    open: false,
   };
 };
 
@@ -150,8 +171,6 @@ export const loadingAgentMessage = (status: AgentStatus) => {
       ? translate('SUMMARIZING', 'message')
       : status.type === 'managing'
       ? translate('MANAGING', 'message')
-      : status.type === 'sufficiency'
-      ? translate('SUFFICIENCY', 'message')
       : status.type === 'user-input'
       ? translate('USER_INPUT_WAITING', 'message')
       : translate('THINKING', 'message');
@@ -191,7 +210,7 @@ export const getToolIcon = (tool: ToolType) => {
 };
 
 export const getExportText = (messages: Message[], agentId?: string) => {
-  if (agentId === 'babydeeragi') {
+  if (agentId === 'babydeeragi' || agentId === 'babyelfagi') {
     // exclude task-execute & user-input messages
     messages = messages.filter(
       (message) =>
@@ -237,7 +256,10 @@ export const getMessageBlocks = (
   let currentMessageBlock: MessageBlock | null = null;
   messages.forEach((message) => {
     if (message.id === undefined) {
-      currentMessageBlock = { messages: [message] } as MessageBlock;
+      currentMessageBlock = {
+        messages: [message],
+        type: message.type,
+      } as MessageBlock;
       messageBlocks.push(currentMessageBlock);
       return;
     }
@@ -248,6 +270,14 @@ export const getMessageBlocks = (
     );
     if (messageBlock) {
       messageBlock.messages.push(message);
+      if (message.type === 'task-output') {
+        messageBlock.status = 'complete';
+      } else if (
+        message.type === 'task-execute' ||
+        message.type === 'search-logs'
+      ) {
+        messageBlock.status = 'running';
+      }
       return;
     }
 
@@ -255,6 +285,8 @@ export const getMessageBlocks = (
     currentMessageBlock = {
       messages: [message],
       id: message.id,
+      type: message.type,
+      status: message.id === undefined ? 'compete' : 'incomplete',
     } as MessageBlock;
     messageBlocks.push(currentMessageBlock);
   });
@@ -270,6 +302,7 @@ export const getMessageBlocks = (
     );
     if (excludeIndex >= 0 && taskOutputIndex >= 0) {
       messageBlock.messages.splice(excludeIndex, 1);
+      messageBlock.status = 'complete';
     }
   });
 
@@ -283,6 +316,7 @@ export const getMessageBlocks = (
     );
     if (taskExecuteIndex >= 0 && taskOutputIndex >= 0) {
       messageBlock.messages.splice(taskExecuteIndex, 1);
+      messageBlock.status = 'complete';
     }
   });
 
@@ -295,6 +329,8 @@ export const getMessageBlocks = (
       if (taskExecuteIndex >= 0) {
         messageBlock.messages.splice(taskExecuteIndex, 1);
       }
+      messageBlock.status =
+        messageBlock.status === 'running' ? 'incomplete' : 'complete';
     });
   }
 

@@ -15,5 +15,12 @@
   "FIRST_TASK_PLACEHOLDER": "تطوير قائمة المهام.",
   "ALERT_GPT_4_DISABLED": "لا يحتوي مفتاح واجهة برمجة التطبيقات الخاص بك على حقوق الوصول إلى GPT-4. يرجى اختيار طراز آخر غير GPT-4 وتشغيله.",
   "USER_INPUT_PLACEHOLDER": "ادخل إجابتك هنا...",
-  "ERROR_CREATING_TASKS": "خطأ في إنشاء المهام."
+  "ERROR_CREATING_TASKS": "خطأ في إنشاء المهام.",
+  "EXAMPLE_OBJECTIVE_1": "اكتب تقريرا عن حالة الطقس للأيام الثلاثة المقبلة في باريس.",
+  "EXAMPLE_OBJECTIVE_2": "قم بإجراء بحث عن النموذج gpt-3.5-turbo-0613",
+  "EXAMPLE_OBJECTIVE_3": "أبلغ عن أحدث الأخبار في فئة المفضلة للمستخدم",
+  "EXAMPLES": "أمثلة",
+  "EXAMPLE_OBJECTIVE_4": "اكتب تقريرا عن BabyAGI وما هي. ضمن ال",
+  "EXAMPLE_OBJECTIVE_5": "تستند هذه المهمة إلى skillSaver.ts، قم بكتابة مهارة جديدة تسمى airtableSaver.ts تستخدم واجهة برمجة التطبيقات لـ Airtable لإدراج البيانات في جدول محدد.",
+  "EXAMPLE_OBJECTIVE_6": "تلخيص الصفحة"
 }

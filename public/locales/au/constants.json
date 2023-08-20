@@ -15,5 +15,12 @@
   "FIRST_TASK_PLACEHOLDER": "Develop a task list",
   "ALERT_GPT_4_DISABLED": "Your API key doesn't have access rights to GPT-4. Please select a model other than GPT-4 and run it.",
   "USER_INPUT_PLACEHOLDER": "Enter your answer here...",
-  "ERROR_CREATING_TASKS": "Tasks erstellen Fehler"
+  "ERROR_CREATING_TASKS": "Tasks erstellen Fehler",
+  "EXAMPLE_OBJECTIVE_1": "Écrivez un rapport météorologique pour les 3 prochains jours à Paris.",
+  "EXAMPLE_OBJECTIVE_2": "Research the gpt-3.5-turbo-0613 model",
+  "EXAMPLE_OBJECTIVE_3": "Rapportez les dernières actualités dans la catégorie préférée de l'utilisateur.",
+  "EXAMPLES": "Examples",
+  "EXAMPLE_OBJECTIVE_4": "Write a report on what BabyAGI is. Include a Youtube link in the report",
+  "EXAMPLE_OBJECTIVE_5": "Based on skillSaver.ts, write a new skill called airtableSaver.ts which use the Airtable API to insert data into a specific table",
+  "EXAMPLE_OBJECTIVE_6": "Summarise the page"
 }
